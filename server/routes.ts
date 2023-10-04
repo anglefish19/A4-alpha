@@ -2,7 +2,8 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Friend, Post, User, WebSession } from "./app";
+import { Comment, Friend, Post, User, WebSession } from "./app";
+import { CommentDoc, CommentOptions } from "./concepts/comment";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -88,6 +89,84 @@ class Routes {
     const user = WebSession.getUser(session);
     await Post.isAuthor(user, _id);
     return Post.delete(_id);
+  }
+
+  @Router.get("/posts/:post/comments")
+  async getComments(author?: string) {
+    let comments;
+    if (author) {
+      const id = (await User.getUserByUsername(author))._id;
+      comments = await Comment.getByAuthor(id);
+    } else {
+      comments = await Comment.getComments({});
+    }
+    return Responses.comments(comments);
+  }
+
+  @Router.post("/posts/:post/comments")
+  async createComment(session: WebSessionDoc, post: ObjectId, image: HTMLCanvasElement, text: string, options?: CommentOptions) {
+    const user = WebSession.getUser(session);
+    const created = await Comment.create(user, post, image, text, options);
+    return { msg: created.msg, comment: await Responses.comment(created.comment) };
+  }
+
+  @Router.patch("/posts/:post/comments/:_id")
+  async updateComment(session: WebSessionDoc, _id: ObjectId, update: Partial<CommentDoc>) {
+    const user = WebSession.getUser(session);
+    await Comment.isAuthor(user, _id);
+    return await Comment.update(_id, update);
+  }
+
+  @Router.delete("/posts/:post/comments/:_id")
+  async deleteComment(session: WebSessionDoc, _id: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Comment.isAuthor(user, _id);
+    return Comment.delete(_id);
+  }
+
+  @Router.get("/tiers")
+  async getTiers() {
+    // get existing tiers
+  }
+
+  @Router.post("/tiers")
+  async createTier() {
+    // create new tier
+  }
+
+  @Router.patch("/tiers")
+  async updateTier() {
+    // update tier
+  }
+
+  @Router.delete("/tiers")
+  async deleteTier() {
+    // delete tier
+  }
+
+  @Router.get("/tiers/:_id")
+  async getTier() {
+    // get a specific tier
+  }
+
+  @Router.post("/tiers/:_id")
+  async addItems() {
+    // get items to a specific tier
+  }
+
+  @Router.delete("/tiers/:_id")
+  async deleteItems() {
+    // remove items from a specific tier
+  }
+
+  @Router.get("/feed")
+  async getFeed() {
+    // retrieve feed
+  }
+
+  @Router.get("/feed")
+  async createFeed() {
+    // make feed
   }
 
   @Router.get("/friends")

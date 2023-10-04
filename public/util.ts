@@ -77,6 +77,30 @@ const operations: operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Get Comments (empty for all)",
+    endpoint: "/api/posts/:post/comments",
+    method: "GET",
+    fields: { author: "input" },
+  },
+  {
+    name: "Create Comment",
+    endpoint: "/api/posts/:post/comments",
+    method: "POST",
+    fields: { post: "input", image: "input", text: "input" },
+  },
+  {
+    name: "Update Comment",
+    endpoint: "/api/posts/:post/comments/:id",
+    method: "PATCH",
+    fields: { id: "input", update: { image: "input", text: "input", options: { backgroundColor: "input" } } },
+  },
+  {
+    name: "Delete Comment",
+    endpoint: "/api/posts/:post/comments/:id",
+    method: "DELETE",
+    fields: { id: "input" },
+  },
 ];
 
 // Do not edit below here.
