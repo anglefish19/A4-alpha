@@ -104,6 +104,9 @@ export default class TierConcept {
     if (!name && !priority) {
       throw new BadValuesError("Tier must have a name and a priority.");
     }
+    if (isNaN(priority)) {
+      throw new BadValuesError("Tier priority must be a number.");
+    }
   }
 
   private canCreate(name: string, priority: number) {
