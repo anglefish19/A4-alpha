@@ -188,7 +188,7 @@ class Routes {
     const feeds = await Feed.getByUser(user);
     const lastFeed = feeds[0].displayFrom;
 
-    if (lastFeed.getTime() < lastAuth.getTime()) {
+    if (!lastFeed || lastFeed.getTime() < lastAuth.getTime()) {
       const tiers = await Tier.getByOwner(user);
       const friends = await Friend.getFriends(user);
       const posts: ObjectId[] = [];
