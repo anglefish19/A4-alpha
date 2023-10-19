@@ -1,6 +1,6 @@
 import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { NotAllowedError, NotFoundError } from "./errors";
+import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 
 export interface CommentDoc extends BaseDoc {
   author: ObjectId;
@@ -14,6 +14,7 @@ export default class CommentConcept {
   public readonly comments = new DocCollection<CommentDoc>("comments");
 
   async create(author: ObjectId, post: ObjectId, image: string, text: string) {
+    this.canCreate(image, text);
     const date = new Date();
     const _id = await this.comments.createOne({ author, post, date, image, text });
     return { msg: "Comment successfully created!", comment: await this.comments.readOne({ _id }) };
@@ -32,6 +33,9 @@ export default class CommentConcept {
 
   async update(_id: ObjectId, update: Partial<CommentDoc>) {
     this.sanitizeUpdate(update);
+    if (update.image !== undefined || update.text !== undefined) {
+      this.canCreate(update.image, update.text);
+    }
     await this.comments.updateOne({ _id }, update);
     return { msg: "Comment successfully updated!" };
   }
@@ -51,9 +55,14 @@ export default class CommentConcept {
     }
   }
 
+  private canCreate(image: string | undefined, text: string | undefined) {
+    if (!image && !text) {
+      throw new BadValuesError("Post must have some form of content.");
+    }
+  }
+
   private sanitizeUpdate(update: Partial<CommentDoc>) {
-    // Make sure the update cannot change the author.
-    const allowedUpdates = ["text", "options"];
+    const allowedUpdates = ["image", "text"];
     for (const key in update) {
       if (!allowedUpdates.includes(key)) {
         throw new NotAllowedError(`Cannot update '${key}' field!`);

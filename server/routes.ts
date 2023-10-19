@@ -4,7 +4,7 @@ import { Router, getExpressRouter } from "./framework/router";
 
 import { Comment, Feed, Friend, Post, Tier, User, WebSession } from "./app";
 import { CommentDoc } from "./concepts/comment";
-import { PostDoc, PostOptions } from "./concepts/post";
+import { PostDoc } from "./concepts/post";
 import { TierDoc } from "./concepts/tier";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -75,9 +75,9 @@ class Routes {
   }
 
   @Router.post("/posts")
-  async createPost(session: WebSessionDoc, content: string, options?: PostOptions) {
+  async createPost(session: WebSessionDoc, images: string, text: string) {
     const user = WebSession.getUser(session);
-    const created = await Post.create(user, content, options);
+    const created = await Post.create(user, images, text);
     return { msg: created.msg, post: await Responses.post(created.post) };
   }
 
