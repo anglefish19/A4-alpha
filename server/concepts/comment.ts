@@ -57,7 +57,7 @@ export default class CommentConcept {
 
   private canCreate(image: string | undefined, text: string | undefined) {
     if (!image && !text) {
-      throw new BadValuesError("Post must have some form of content.");
+      throw new BadValuesError("Comment must have some form of content.");
     }
   }
 

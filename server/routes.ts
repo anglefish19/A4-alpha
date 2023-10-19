@@ -110,6 +110,9 @@ class Routes {
 
   @Router.post("/posts/:post/comments")
   async createComment(session: WebSessionDoc, post: ObjectId, image: string, text: string) {
+    if (!post) {
+      throw new BadValuesError("No post given.");
+    }
     const user = WebSession.getUser(session);
     const created = await Comment.create(user, post, image, text);
     return { msg: created.msg, comment: await Responses.comment(created.comment) };

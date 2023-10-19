@@ -1,6 +1,6 @@
 import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { NotAllowedError, NotFoundError } from "./errors";
+import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 
 export interface TierDoc extends BaseDoc {
   owner: ObjectId;
@@ -13,6 +13,7 @@ export default class TierConcept {
   public readonly tiers = new DocCollection<TierDoc>("tiers");
 
   async create(owner: ObjectId, name: string, priority: number) {
+    this.canCreate(name, priority);
     const items: ObjectId[] = [];
     const _id = await this.tiers.createOne({ owner, items, name, priority });
     return { msg: "Tier successfully created!", tier: await this.tiers.readOne({ _id }) };
@@ -31,6 +32,9 @@ export default class TierConcept {
 
   async update(_id: ObjectId, update: Partial<TierDoc>) {
     this.sanitizeUpdate(update);
+    if (update.name !== undefined || update.priority !== undefined) {
+      this.canCreate(update.name, update.priority);
+    }
     await this.tiers.updateOne({ _id }, update);
     return { msg: "Tier successfully updated!" };
   }
@@ -73,6 +77,9 @@ export default class TierConcept {
   async updateItem(_id: ObjectId, item: ObjectId, fxn: string) {
     const tier = await this.tiers.readOne({ _id });
     const contents = tier?.items;
+    if (!item) {
+      throw new BadValuesError("No item given.");
+    }
 
     if (fxn === "add") {
       contents?.push(item);
@@ -91,6 +98,12 @@ export default class TierConcept {
       return { msg: "Item removed!" };
     }
     throw new NotAllowedError(`'${fxn}' is not an action that can be performed on the items of a tier.`);
+  }
+
+  private canCreate(name: string | undefined, priority: number | undefined) {
+    if (!name && !priority) {
+      throw new BadValuesError("Tier must have a name and a priority.");
+    }
   }
 
   private sanitizeItemUpdate(update: Partial<TierDoc>) {
