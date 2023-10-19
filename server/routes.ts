@@ -162,6 +162,9 @@ class Routes {
 
   @Router.patch("/tiers/:_id/:item")
   async updateItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId, fxn: string) {
+    if (_id === undefined || item === undefined || fxn === undefined) {
+      throw new BadValuesError("Please fill out all fields.");
+    }
     const user = WebSession.getUser(session);
     await Tier.isOwner(user, _id);
     return Tier.updateItem(_id, item, fxn);
