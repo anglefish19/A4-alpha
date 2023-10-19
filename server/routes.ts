@@ -2,20 +2,23 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Comment, Friend, Post, User, WebSession } from "./app";
-import { CommentDoc, CommentOptions } from "./concepts/comment";
+import { Comment, Feed, Friend, Post, Tier, User, WebSession } from "./app";
+import { CommentDoc } from "./concepts/comment";
 import { PostDoc, PostOptions } from "./concepts/post";
+import { TierDoc } from "./concepts/tier";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
 import Responses from "./responses";
 
 class Routes {
+  // SESSION
   @Router.get("/session")
   async getSessionUser(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
     return await User.getUserById(user);
   }
 
+  // USER
   @Router.get("/users")
   async getUsers() {
     return await User.getUsers();
@@ -58,6 +61,7 @@ class Routes {
     return { msg: "Logged out!" };
   }
 
+  // POST
   @Router.get("/posts")
   async getPosts(author?: string) {
     let posts;
@@ -91,12 +95,12 @@ class Routes {
     return Post.delete(_id);
   }
 
-  @Router.get("/posts/:post/comments")
-  async getComments(author?: string) {
+  // COMMENT
+  @Router.get("/posts/:postId/comments")
+  async getComments(postId?: ObjectId) {
     let comments;
-    if (author) {
-      const id = (await User.getUserByUsername(author))._id;
-      comments = await Comment.getByAuthor(id);
+    if (postId) {
+      comments = await Comment.getComments({ post: postId });
     } else {
       comments = await Comment.getComments({});
     }
@@ -104,71 +108,103 @@ class Routes {
   }
 
   @Router.post("/posts/:post/comments")
-  async createComment(session: WebSessionDoc, post: ObjectId, image: HTMLCanvasElement, text: string, options?: CommentOptions) {
+  async createComment(session: WebSessionDoc, post: ObjectId, image: HTMLCanvasElement, text: string) {
     const user = WebSession.getUser(session);
-    const created = await Comment.create(user, post, image, text, options);
+    const created = await Comment.create(user, post, image, text);
     return { msg: created.msg, comment: await Responses.comment(created.comment) };
   }
 
   @Router.patch("/posts/:post/comments/:_id")
-  async updateComment(session: WebSessionDoc, _id: ObjectId, update: Partial<CommentDoc>) {
+  async updateComment(session: WebSessionDoc, post: ObjectId, _id: ObjectId, update: Partial<CommentDoc>) {
     const user = WebSession.getUser(session);
     await Comment.isAuthor(user, _id);
     return await Comment.update(_id, update);
   }
 
   @Router.delete("/posts/:post/comments/:_id")
-  async deleteComment(session: WebSessionDoc, _id: ObjectId) {
+  async deleteComment(session: WebSessionDoc, post: ObjectId, _id: ObjectId) {
     const user = WebSession.getUser(session);
     await Comment.isAuthor(user, _id);
     return Comment.delete(_id);
   }
 
+  // TIER
   @Router.get("/tiers")
-  async getTiers() {
-    // get existing tiers
+  async getTiers(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return await Tier.getByOwner(user);
   }
 
   @Router.post("/tiers")
-  async createTier() {
-    // create new tier
+  async createTier(session: WebSessionDoc, name: string, priority: number) {
+    const user = WebSession.getUser(session);
+    const created = await Tier.create(user, name, priority);
+    return { msg: created.msg, tier: await Responses.tier(created.tier) };
   }
 
   @Router.patch("/tiers")
-  async updateTier() {
-    // update tier
+  async updateTier(session: WebSessionDoc, _id: ObjectId, update: Partial<TierDoc>) {
+    const user = WebSession.getUser(session);
+    await Tier.isOwner(user, _id);
+    return await Tier.update(_id, update);
   }
 
   @Router.delete("/tiers")
-  async deleteTier() {
-    // delete tier
+  async deleteTier(session: WebSessionDoc, _id: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Tier.isOwner(user, _id);
+    return Tier.delete(_id);
   }
 
-  @Router.get("/tiers/:_id")
-  async getTier() {
-    // get a specific tier
+  @Router.patch("/tiers/:_id")
+  async addItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Tier.isOwner(user, _id);
+    return Tier.addItem(_id, item);
   }
 
-  @Router.post("/tiers/:_id")
-  async addItems() {
-    // get items to a specific tier
+  @Router.patch("/tiers/:_id/:item")
+  async deleteItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Tier.isOwner(user, _id);
+    return Tier.deleteItem(_id, item);
   }
 
-  @Router.delete("/tiers/:_id")
-  async deleteItems() {
-    // remove items from a specific tier
-  }
-
+  // FEED
   @Router.get("/feed")
-  async getFeed() {
-    // retrieve feed
+  async getFeed(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return await Feed.getByUser(user);
   }
 
-  @Router.get("/feed")
-  async createFeed() {
-    // make feed
+  @Router.post("/feed")
+  async createFeed(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    const lastAuth = await User.getLastAuth(user);
+    const feeds = await Feed.getByUser(user);
+    const lastFeed = feeds[0].displayFrom;
+
+    if (lastFeed.getTime() < lastAuth.getTime()) {
+      const tiers = await Tier.getByOwner(user);
+      const friends = await Friend.getFriends(user);
+      const posts: ObjectId[] = [];
+
+      for (const tier of tiers) {
+        for (const friend of friends) {
+          if (await Tier.isItemInTier(tier._id, friend)) {
+            const friendPosts = await Post.getPosts({ author: friend, dateCreated: { $gt: lastAuth } });
+            for (const post of friendPosts) {
+              posts.push(post._id);
+            }
+          }
+        }
+      }
+      return await Feed.create(user, lastAuth, posts);
+    }
+    return feeds[0];
   }
 
+  // FOLLOW
   @Router.get("/friends")
   async getFriends(session: WebSessionDoc) {
     const user = WebSession.getUser(session);

@@ -1,10 +1,114 @@
+import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
+import { NotAllowedError, NotFoundError } from "./errors";
 
 export interface TierDoc extends BaseDoc {
-  name: String;
-  priority: Number;
+  owner: ObjectId;
+  items: ObjectId[];
+  name: string;
+  priority: number;
 }
 
 export default class TierConcept {
   public readonly tiers = new DocCollection<TierDoc>("tiers");
+
+  async create(owner: ObjectId, name: string, priority: number) {
+    const items: ObjectId[] = [];
+    const _id = await this.tiers.createOne({ owner, items, name, priority });
+    return { msg: "Tier successfully created!", tier: await this.tiers.readOne({ _id }) };
+  }
+
+  async getTiers(query: Filter<TierDoc>) {
+    const tiers = await this.tiers.readMany(query, {
+      sort: { priority: 1 },
+    });
+    return tiers;
+  }
+
+  async getByOwner(owner: ObjectId) {
+    return await this.getTiers({ owner });
+  }
+
+  async update(_id: ObjectId, update: Partial<TierDoc>) {
+    this.sanitizeUpdate(update);
+    await this.tiers.updateOne({ _id }, update);
+    return { msg: "Tier successfully updated!" };
+  }
+
+  async delete(_id: ObjectId) {
+    await this.tiers.deleteOne({ _id });
+    return { msg: "Tier deleted successfully!" };
+  }
+
+  async isOwner(user: ObjectId, _id: ObjectId) {
+    const tier = await this.tiers.readOne({ _id });
+    if (!tier) {
+      throw new NotFoundError(`Tier ${_id} does not exist!`);
+    }
+    if (tier.owner.toString() !== user.toString()) {
+      throw new TierOwnerNotMatchError(user, _id);
+    }
+  }
+
+  async isItemInTier(_id: ObjectId, item: ObjectId) {
+    const tier = await this.tiers.readOne({ _id });
+    if (!tier) {
+      throw new NotFoundError(`Tier ${_id} does not exist!`);
+    }
+    if (tier.items.indexOf(item) !== -1) {
+      return true;
+    }
+    return false;
+  }
+
+  private sanitizeUpdate(update: Partial<TierDoc>) {
+    const allowedUpdates = ["name", "priority"];
+    for (const key in update) {
+      if (!allowedUpdates.includes(key)) {
+        throw new NotAllowedError(`Cannot update '${key}' field!`);
+      }
+    }
+  }
+
+  async addItem(_id: ObjectId, item: ObjectId) {
+    const tier = await this.tiers.readOne({ _id });
+    const contents = tier?.items;
+    contents?.push(item);
+    const update: Partial<TierDoc> = { items: contents };
+    this.sanitizeItemUpdate(update);
+    await this.tiers.updateOne({ _id }, update);
+    return { msg: "Item added!" };
+  }
+
+  async deleteItem(_id: ObjectId, item: ObjectId) {
+    const tier = await this.tiers.readOne({ _id });
+    const contents = tier?.items;
+
+    const index = contents?.indexOf(item);
+    if (index && index > -1) {
+      contents?.splice(index, 1);
+    }
+    const update: Partial<TierDoc> = { items: contents };
+    this.sanitizeItemUpdate(update);
+    await this.tiers.updateOne({ _id }, update);
+    return { msg: "Item removed!" };
+  }
+
+  private sanitizeItemUpdate(update: Partial<TierDoc>) {
+    const allowedUpdates = ["items"];
+    for (const key in update) {
+      if (!allowedUpdates.includes(key)) {
+        throw new NotAllowedError(`Cannot update '${key}' field!`);
+      }
+    }
+  }
+}
+
+export class TierOwnerNotMatchError extends NotAllowedError {
+  constructor(
+    public readonly owner: ObjectId,
+    public readonly _id: ObjectId,
+  ) {
+    super("{0} is not the owner of tier {1}!", owner, _id);
+  }
 }

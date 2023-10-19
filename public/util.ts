@@ -79,9 +79,9 @@ const operations: operation[] = [
   },
   {
     name: "Get Comments (empty for all)",
-    endpoint: "/api/posts/:post/comments",
+    endpoint: "/api/posts/:postId/comments",
     method: "GET",
-    fields: { author: "input" },
+    fields: { postId: "input" },
   },
   {
     name: "Create Comment",
@@ -93,13 +93,61 @@ const operations: operation[] = [
     name: "Update Comment",
     endpoint: "/api/posts/:post/comments/:id",
     method: "PATCH",
-    fields: { id: "input", update: { image: "input", text: "input", options: { backgroundColor: "input" } } },
+    fields: { post: "input", id: "input", update: { image: "input", text: "input" } },
   },
   {
     name: "Delete Comment",
     endpoint: "/api/posts/:post/comments/:id",
     method: "DELETE",
+    fields: { post: "input", id: "input" },
+  },
+  {
+    name: "Get Tiers",
+    endpoint: "/api/tiers",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Create Tier",
+    endpoint: "/api/tiers",
+    method: "POST",
+    fields: { name: "input", priority: "input" },
+  },
+  {
+    name: "Update Tier",
+    endpoint: "/api/tiers",
+    method: "PATCH",
+    fields: { id: "input", update: { name: "input", priority: "input" } },
+  },
+  {
+    name: "Delete Tier",
+    endpoint: "/api/tiers",
+    method: "DELETE",
     fields: { id: "input" },
+  },
+  {
+    name: "Add Item to Tier",
+    endpoint: "/api/tiers/:id/:item",
+    method: "PATCH",
+    fields: { id: "input", item: "input" },
+  },
+  {
+    name: "Delete Item in Tier",
+    endpoint: "/api/tiers/:id/:item",
+    method: "PATCH",
+    fields: { id: "input", item: "input" },
+  },
+  {
+    name: "Get Feed",
+    endpoint: "/api/feed",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Create Feed",
+    endpoint: "/api/feed",
+    method: "POST",
+    fields: {},
   },
 ];
 

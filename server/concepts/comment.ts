@@ -1,11 +1,6 @@
 import { Filter, ObjectId } from "mongodb";
-
 import DocCollection, { BaseDoc } from "../framework/doc";
 import { NotAllowedError, NotFoundError } from "./errors";
-
-export interface CommentOptions {
-  backgroundColor?: string;
-}
 
 export interface CommentDoc extends BaseDoc {
   author: ObjectId;
@@ -13,15 +8,14 @@ export interface CommentDoc extends BaseDoc {
   date: Date;
   image: HTMLCanvasElement;
   text: string;
-  options?: CommentOptions;
 }
 
 export default class CommentConcept {
   public readonly comments = new DocCollection<CommentDoc>("comments");
 
-  async create(author: ObjectId, post: ObjectId, image: HTMLCanvasElement, text: string, options?: CommentOptions) {
+  async create(author: ObjectId, post: ObjectId, image: HTMLCanvasElement, text: string) {
     const date = new Date();
-    const _id = await this.comments.createOne({ author, post, date, image, text, options });
+    const _id = await this.comments.createOne({ author, post, date, image, text });
     return { msg: "Comment successfully created!", comment: await this.comments.readOne({ _id }) };
   }
 

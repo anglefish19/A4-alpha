@@ -2,6 +2,7 @@ import { User } from "./app";
 import { CommentDoc } from "./concepts/comment";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friend";
 import { PostAuthorNotMatchError, PostDoc } from "./concepts/post";
+import { TierDoc } from "./concepts/tier";
 import { Router } from "./framework/router";
 
 /**
@@ -37,6 +38,17 @@ export default class Responses {
     }
     const author = await User.getUserById(comment.author);
     return { ...comment, author: author.username };
+  }
+
+  /**
+   * Convert TierDoc into more readable format for the frontend by converting the owner id into a username.
+   */
+  static async tier(tier: TierDoc | null) {
+    if (!tier) {
+      return tier;
+    }
+    const owner = await User.getUserById(tier.owner);
+    return { ...tier, owner: owner.username };
   }
 
   /**
