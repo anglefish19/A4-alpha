@@ -30,6 +30,10 @@ export default class PostConcept {
   }
 
   async update(_id: ObjectId, update: Partial<PostDoc>) {
+    const post = this.getPosts({ _id: _id });
+    if (!post) {
+      throw new BadValuesError("Post does not exist.");
+    }
     this.sanitizeUpdate(update);
     if (update.images !== undefined || update.text !== undefined) {
       this.canCreate(update.images, update.text);
