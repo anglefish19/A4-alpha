@@ -5,7 +5,6 @@ export interface FeedDoc extends BaseDoc {
   user: ObjectId;
   displayFrom: Date;
   content: ObjectId[];
-  order: ObjectId[];
 }
 
 export default class FeedConcept {
