@@ -6,14 +6,14 @@ export interface CommentDoc extends BaseDoc {
   author: ObjectId;
   post: ObjectId;
   date: Date;
-  image: HTMLCanvasElement;
+  image: string;
   text: string;
 }
 
 export default class CommentConcept {
   public readonly comments = new DocCollection<CommentDoc>("comments");
 
-  async create(author: ObjectId, post: ObjectId, image: HTMLCanvasElement, text: string) {
+  async create(author: ObjectId, post: ObjectId, image: string, text: string) {
     const date = new Date();
     const _id = await this.comments.createOne({ author, post, date, image, text });
     return { msg: "Comment successfully created!", comment: await this.comments.readOne({ _id }) };

@@ -70,28 +70,27 @@ export default class TierConcept {
     }
   }
 
-  async addItem(_id: ObjectId, item: ObjectId) {
-    const tier = await this.tiers.readOne({ _id });
-    const contents = tier?.items;
-    contents?.push(item);
-    const update: Partial<TierDoc> = { items: contents };
-    this.sanitizeItemUpdate(update);
-    await this.tiers.updateOne({ _id }, update);
-    return { msg: "Item added!" };
-  }
-
-  async deleteItem(_id: ObjectId, item: ObjectId) {
+  async updateItem(_id: ObjectId, item: ObjectId, fxn: string) {
     const tier = await this.tiers.readOne({ _id });
     const contents = tier?.items;
 
-    const index = contents?.indexOf(item);
-    if (index && index > -1) {
-      contents?.splice(index, 1);
+    if (fxn === "add") {
+      contents?.push(item);
+      const update: Partial<TierDoc> = { items: contents };
+      this.sanitizeItemUpdate(update);
+      await this.tiers.updateOne({ _id }, update);
+      return { msg: "Item added!" };
+    } else if (fxn === "delete") {
+      const index = contents?.indexOf(item);
+      if (index && index > -1) {
+        contents?.splice(index, 1);
+      }
+      const update: Partial<TierDoc> = { items: contents };
+      this.sanitizeItemUpdate(update);
+      await this.tiers.updateOne({ _id }, update);
+      return { msg: "Item removed!" };
     }
-    const update: Partial<TierDoc> = { items: contents };
-    this.sanitizeItemUpdate(update);
-    await this.tiers.updateOne({ _id }, update);
-    return { msg: "Item removed!" };
+    throw new NotAllowedError(`'${fxn}' is not an action that can be performed on the items of a tier.`);
   }
 
   private sanitizeItemUpdate(update: Partial<TierDoc>) {

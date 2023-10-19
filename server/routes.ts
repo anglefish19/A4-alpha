@@ -108,7 +108,7 @@ class Routes {
   }
 
   @Router.post("/posts/:post/comments")
-  async createComment(session: WebSessionDoc, post: ObjectId, image: HTMLCanvasElement, text: string) {
+  async createComment(session: WebSessionDoc, post: ObjectId, image: string, text: string) {
     const user = WebSession.getUser(session);
     const created = await Comment.create(user, post, image, text);
     return { msg: created.msg, comment: await Responses.comment(created.comment) };
@@ -142,32 +142,25 @@ class Routes {
     return { msg: created.msg, tier: await Responses.tier(created.tier) };
   }
 
-  @Router.patch("/tiers")
+  @Router.patch("/tiers/:_id")
   async updateTier(session: WebSessionDoc, _id: ObjectId, update: Partial<TierDoc>) {
     const user = WebSession.getUser(session);
     await Tier.isOwner(user, _id);
     return await Tier.update(_id, update);
   }
 
-  @Router.delete("/tiers")
+  @Router.delete("/tiers/:_id")
   async deleteTier(session: WebSessionDoc, _id: ObjectId) {
     const user = WebSession.getUser(session);
     await Tier.isOwner(user, _id);
     return Tier.delete(_id);
   }
 
-  @Router.patch("/tiers/:_id")
-  async addItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId) {
-    const user = WebSession.getUser(session);
-    await Tier.isOwner(user, _id);
-    return Tier.addItem(_id, item);
-  }
-
   @Router.patch("/tiers/:_id/:item")
-  async deleteItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId) {
+  async updateItem(session: WebSessionDoc, _id: ObjectId, item: ObjectId, fxn: string) {
     const user = WebSession.getUser(session);
     await Tier.isOwner(user, _id);
-    return Tier.deleteItem(_id, item);
+    return Tier.updateItem(_id, item, fxn);
   }
 
   // FEED

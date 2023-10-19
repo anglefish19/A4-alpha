@@ -115,27 +115,21 @@ const operations: operation[] = [
   },
   {
     name: "Update Tier",
-    endpoint: "/api/tiers",
+    endpoint: "/api/tiers/:id",
     method: "PATCH",
     fields: { id: "input", update: { name: "input", priority: "input" } },
   },
   {
     name: "Delete Tier",
-    endpoint: "/api/tiers",
+    endpoint: "/api/tiers/:id",
     method: "DELETE",
     fields: { id: "input" },
   },
   {
-    name: "Add Item to Tier",
+    name: "Update Item in Tier (enter 'add' or 'delete' for fxn)",
     endpoint: "/api/tiers/:id/:item",
     method: "PATCH",
-    fields: { id: "input", item: "input" },
-  },
-  {
-    name: "Delete Item in Tier",
-    endpoint: "/api/tiers/:id/:item",
-    method: "PATCH",
-    fields: { id: "input", item: "input" },
+    fields: { id: "input", item: "input", fxn: "input" },
   },
   {
     name: "Get Feed",
