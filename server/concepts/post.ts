@@ -30,9 +30,9 @@ export default class PostConcept {
   }
 
   async update(_id: ObjectId, update: Partial<PostDoc>) {
-    const post = this.getPosts({ _id: _id });
+    const post = await this.posts.readOne({ _id });
     if (!post) {
-      throw new BadValuesError("Post does not exist.");
+      throw new NotFoundError(`Post ${_id} does not exist!`);
     }
     this.sanitizeUpdate(update);
     if (update.images !== undefined || update.text !== undefined) {
@@ -43,6 +43,10 @@ export default class PostConcept {
   }
 
   async delete(_id: ObjectId) {
+    const post = await this.posts.readOne({ _id });
+    if (!post) {
+      throw new NotFoundError(`Post ${_id} does not exist!`);
+    }
     await this.posts.deleteOne({ _id });
     return { msg: "Post deleted successfully!" };
   }
