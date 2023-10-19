@@ -33,7 +33,7 @@ export default class TierConcept {
   async update(_id: ObjectId, update: Partial<TierDoc>) {
     this.sanitizeUpdate(update);
     if (update.name !== undefined || update.priority !== undefined) {
-      this.canCreate(update.name, update.priority);
+      this.canUpdate(update.name, update.priority);
     }
     await this.tiers.updateOne({ _id }, update);
     return { msg: "Tier successfully updated!" };
@@ -100,8 +100,14 @@ export default class TierConcept {
     throw new NotAllowedError(`'${fxn}' is not an action that can be performed on the items of a tier.`);
   }
 
-  private canCreate(name: string | undefined, priority: number | undefined) {
+  private canUpdate(name: string | undefined, priority: number | undefined) {
     if (!name && !priority) {
+      throw new BadValuesError("Tier must have a name and a priority.");
+    }
+  }
+
+  private canCreate(name: string, priority: number) {
+    if (!name || !priority) {
       throw new BadValuesError("Tier must have a name and a priority.");
     }
   }
