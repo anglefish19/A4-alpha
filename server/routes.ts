@@ -187,6 +187,12 @@ class Routes {
     const lastAuth = await User.getLastAuth(user);
     const feeds = await Feed.getByUser(user);
     if (feeds.length === 0 || feeds[0].displayFrom.getTime() < lastAuth.getTime()) {
+      const time = new Date();
+      if (feeds.length === 0) {
+        time.setDate(time.getDate() - 1);
+      } else {
+        time.setDate(feeds[0].displayFrom.getDate());
+      }
       const tiers = await Tier.getByOwner(user);
       const friends = await Friend.getFriends(user);
       const posts: ObjectId[] = [];
@@ -194,14 +200,14 @@ class Routes {
       for (const tier of tiers) {
         for (const friend of friends) {
           if (await Tier.isItemInTier(tier._id, friend)) {
-            const friendPosts = await Post.getPosts({ author: friend, dateCreated: { $gt: lastAuth } });
+            const friendPosts = await Post.getPosts({ author: friend, dateCreated: { $gt: time } });
             for (const post of friendPosts) {
               posts.push(post._id);
             }
           }
         }
       }
-      return await Feed.create(user, lastAuth, posts);
+      return await Feed.create(user, time, posts);
     }
     return feeds[0];
   }
