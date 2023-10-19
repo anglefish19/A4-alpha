@@ -45,6 +45,10 @@ class Routes {
   @Router.delete("/users")
   async deleteUser(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
+    const posts = await Post.getByAuthor(user);
+    for (const post of posts) {
+      await Post.delete(post._id);
+    }
     WebSession.end(session);
     return await User.delete(user);
   }
