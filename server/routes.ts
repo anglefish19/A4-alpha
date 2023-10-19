@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 
+import { BadValuesError } from "./concepts/errors";
 import { Router, getExpressRouter } from "./framework/router";
 
 import { Comment, Feed, Friend, Post, Tier, User, WebSession } from "./app";
@@ -102,7 +103,7 @@ class Routes {
     if (postId) {
       comments = await Comment.getComments({ post: postId });
     } else {
-      comments = await Comment.getComments({});
+      throw new BadValuesError("No postId given.");
     }
     return Responses.comments(comments);
   }
